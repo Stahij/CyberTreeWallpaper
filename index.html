@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <title>Organic Cyber Tree</title>
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      background-color: #020804; 
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    camera.position.z = 14;
+    camera.position.y = 4;
+
+    const material = new THREE.MeshBasicMaterial({ 
+      color: 0x00ff44, 
+      wireframe: true 
+    });
+
+    const treeGroup = new THREE.Group();
+    
+    // ОРГАНИЧЕСКАЯ ГЕНЕРАЦИЯ ДЕРЕВА
+    function createBranch(parent, level, length, radius) {
+      if (level === 0) return;
+
+      // Цилиндр с меньшим количеством граней для оптимизации на телефоне
+      const geometry = new THREE.CylinderGeometry(radius * 0.5, radius, length, 5, 1);
+      const branchMesh = new THREE.Mesh(geometry, material);
+      branchMesh.position.y = length / 2;
+
+      const pivot = new THREE.Group();
+      pivot.add(branchMesh);
+      parent.add(pivot);
+
+      if (level > 1) {
+        // Каждая ветка дает от 2 до 3 новых побегов (случайно)
+        const numBranches = Math.floor(Math.random() * 2) + 2; 
+
+        for (let i = 0; i < numBranches; i++) {
+          const childBranch = new THREE.Group();
+          
+          // Ветки растут не только с макушки, но и чуть ниже (от 80% до 100% высоты родителя)
+          childBranch.position.y = length * (0.8 + Math.random() * 0.2); 
+
+          // 1. Вращение вокруг ствола (по оси Y) во все стороны
+          const angleY = (Math.PI * 2 / numBranches) * i + (Math.random() - 0.5);
+          childBranch.rotation.y = angleY;
+
+          // 2. Случайный наклон от ствола наружу (от 15 до 50 градусов)
+          const angleBend = 0.2 + Math.random() * 0.6; 
+          childBranch.rotation.z = angleBend;
+
+          // 3. Случайная кривизна по оси X, чтобы ветки не были идеально прямыми
+          childBranch.rotation.x = (Math.random() - 0.5) * 0.5;
+
+          // Следующая ветка короче и тоньше
+          const nextLength = length * (0.6 + Math.random() * 0.3);
+          const nextRadius = radius * (0.5 + Math.random() * 0.3);
+
+          pivot.add(childBranch);
+          
+          // Рекурсивный вызов
+          createBranch(childBranch, level - 1, nextLength, nextRadius);
+        }
+      }
+    }
+
+    // Запускаем генерацию: 5 уровней, чтобы не перегрузить процессор телефона
+    createBranch(treeGroup, 5, 3.5, 0.6);
+    
+    treeGroup.position.y = -6;
+    let currentScale = 0.01;
+    treeGroup.scale.set(currentScale, currentScale, currentScale);
+    scene.add(treeGroup);
+
+    // СИСТЕМА ЧАСТИЦ
+    const particleCount = 200;
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+
+    for(let i = 0; i < particleCount * 3; i += 3) {
+      particlePositions[i] = (Math.random() - 0.5) * 15;     
+      particlePositions[i+1] = Math.random() * 15 - 5;       
+      particlePositions[i+2] = (Math.random() - 0.5) * 10;     
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particleMaterial = new THREE.PointsMaterial({ 
+      color: 0x00ff44, 
+      size: 0.08,
+      transparent: true,
+      opacity: 0.8
+    });
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    // АНИМАЦИЯ
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      treeGroup.rotation.y += 0.003;
+      
+      if (currentScale < 1.0) {
+        currentScale += 0.003; 
+        treeGroup.scale.set(currentScale, currentScale, currentScale);
+      }
+
+      const positions = particles.geometry.attributes.position.array;
+      for(let i = 1; i < particleCount * 3; i += 3) {
+        positions[i] -= 0.03; 
+        if (positions[i] < -6) positions[i] = 10;
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
+
