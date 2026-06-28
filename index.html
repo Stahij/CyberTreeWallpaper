@@ -22,7 +22,8 @@
     document.body.appendChild(renderer.domElement);
 
     camera.position.z = 14;
-    camera.position.y = 4;
+    camera.position.y = 2;
+    camera.lookAt(0, 0, 0);
 
     const material = new THREE.MeshBasicMaterial({ 
       color: 0x00ff44, 
@@ -80,7 +81,7 @@
     // Запускаем генерацию: 5 уровней, чтобы не перегрузить процессор телефона
     createBranch(treeGroup, 5, 3.5, 0.6);
     
-    treeGroup.position.y = -3.5;
+    treeGroup.position.y = 0;
     let currentScale = 0.01;
     treeGroup.scale.set(currentScale, currentScale, currentScale);
     scene.add(treeGroup);
