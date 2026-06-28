@@ -1,0 +1,42 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Получение кода
+      uses: actions/checkout@v4
+
+    - name: Настройка Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Настройка окружения
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Установка движка Cordova
+      run: npm install -g cordova
+
+    - name: Сборка Android-приложения
+      run: |
+        cordova create myapp com.stahij.cybertree CyberTree
+        cp index.html myapp/www/index.html
+        cd myapp
+        cordova platform add android
+        cordova build android
+
+    - name: Выгрузка готового APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: CyberTree-APK
+        path: myapp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+
